@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.battery_alarm">
+    package="blackleg15.apps.battery_alarm">
    <application
         android:label="battery_alarm"
         android:name="${applicationName}"

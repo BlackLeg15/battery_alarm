@@ -47,7 +47,6 @@ class _HomePageState extends State<HomePage> {
       importance: Importance.max,
       priority: Priority.high,
       ticker: 'ticker',
-      fullScreenIntent: true,
     );
     const NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
     await flutterLocalNotificationsPlugin.show(

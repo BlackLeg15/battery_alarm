@@ -1,4 +1,4 @@
-package com.example.battery_alarm
+package blackleg15.apps.battery_alarm
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -12,7 +12,7 @@ import java.util.*
 import io.flutter.embedding.android.FlutterActivity
 
 class MainActivity: FlutterActivity() {
-    private val CHANNEL_STREAM = "com.example.battery_alarm/stream"
+    private val CHANNEL_STREAM = "blackleg15.apps.battery_alarm/stream"
     private var batteryBroadcastReceiver: BatteryBroadcastReceiver? = null
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
