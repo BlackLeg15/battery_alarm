@@ -2,11 +2,11 @@ import 'package:battery_indicator/battery_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_modular/flutter_modular.dart';
+
 import 'home_store.dart';
 
 class HomePage extends StatefulWidget {
-  final String title;
-  const HomePage({Key? key, this.title = "Home"}) : super(key: key);
+  const HomePage({Key? key}) : super(key: key);
 
   @override
   createState() => _HomePageState();
@@ -14,54 +14,56 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final store = Modular.get<HomeStore>();
-  late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
-  late AndroidInitializationSettings androidInitializationSettings;
-  late InitializationSettings initializationSettings;
 
-  var buildCounter = 0;
-
-  var previousBatteryValue = 0.0;
-  var currentBatteryValue = 0.0;
+  late Future<bool> futureInitializeNotificationsChannel;
 
   @override
   void initState() {
     super.initState();
-    initializeNotifications();
+    futureInitializeNotificationsChannel = initializeNotificationsChannel();
     startListeningToTheBatteryValue();
   }
 
-  void initializeNotifications() {
-    flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-    androidInitializationSettings = const AndroidInitializationSettings('app_icon');
-    initializationSettings = InitializationSettings(
-      android: androidInitializationSettings,
-    );
-    flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
+  late NotificationDetails platformChannelSpecifics;
+
+  Future<bool> initializeNotificationsChannel() async {
+    try {
+      flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
+      const androidInitializationSettings = AndroidInitializationSettings('app_icon');
+      const initializationSettings = InitializationSettings(android: androidInitializationSettings);
+
+      await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+      const androidPlatformChannelSpecifics = AndroidNotificationDetails(
+        '493de931f3c92df6084ac2b3238ed309',
+        'BATTERY_NOTIFICATION',
+        importance: Importance.max,
+        priority: Priority.high,
+      );
+      platformChannelSpecifics = const NotificationDetails(android: androidPlatformChannelSpecifics);
+      return true;
+    } catch (error) {
+      onErrorWhenInitializingNotificationsChannel();
+      return false;
+    }
   }
 
-  Future<void> showNotification() async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
-      'your channel id',
-      'your channel name',
-      channelDescription: 'your channel description',
-      importance: Importance.max,
-      priority: Priority.high,
-      ticker: 'ticker',
-    );
-    const NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
-    await flutterLocalNotificationsPlugin.show(
-      0,
-      'Seu celular agradece:',
-      'Preserve a bateria dele tirando-o da tomada',
-      platformChannelSpecifics,
-      payload: 'item x',
-    );
+  var notificationsChannelInitializationError = '';
+
+  void onErrorWhenInitializingNotificationsChannel() {
+    notificationsChannelInitializationError = 'Não foi possível inicializar o canal de notificações';
   }
 
   void startListeningToTheBatteryValue() {
     final batteryStream = store.channel.batteryChannel.receiveBroadcastStream();
     batteryStream.listen(onNewBatteryValueCallback);
   }
+
+  var previousBatteryValue = 0.0;
+  var currentBatteryValue = 0.0;
+  var buildCounter = 0;
 
   void onNewBatteryValueCallback(dynamic possibleValue) {
     final newBatteryValue = possibleValue as double?;
@@ -77,6 +79,15 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> showNotification() {
+    return flutterLocalNotificationsPlugin.show(
+      0,
+      'Seu celular agradece:',
+      'Preserve a bateria dele tirando-o da tomada',
+      platformChannelSpecifics,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -84,12 +95,21 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Battery Listener'),
       ),
       body: Center(
-        child: Builder(
-          builder: (context) {
+        child: FutureBuilder(
+          initialData: false,
+          future: futureInitializeNotificationsChannel,
+          builder: (context, snapshot) {
+            final isNotificationsChannelInitialized = snapshot.data;
+            if (isNotificationsChannelInitialized == false) {
+              if (notificationsChannelInitializationError.isNotEmpty) {
+                return Text(notificationsChannelInitializationError);
+              }
+              return const CircularProgressIndicator();
+            }
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Builds: $buildCounter'),
+                //Text('Builds: $buildCounter'),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -97,14 +117,20 @@ class _HomePageState extends State<HomePage> {
                       'Battery: ',
                       style: TextStyle(fontSize: 40),
                     ),
-                    BatteryIndicator(batteryFromPhone: false, batteryLevel: currentBatteryValue.toInt(), size: 36, percentNumSize: 27),
-                    TextButton(
-                        onPressed: () {
-                          showNotification();
-                        },
-                        child: const Text('Show notification'))
+                    BatteryIndicator(
+                      batteryFromPhone: false,
+                      batteryLevel: currentBatteryValue.toInt(),
+                      size: 36,
+                      percentNumSize: 27,
+                    ),
                   ],
                 ),
+                TextButton(
+                  onPressed: () {
+                    showNotification();
+                  },
+                  child: const Text('Show notification'),
+                )
               ],
             );
           },
