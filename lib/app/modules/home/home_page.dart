@@ -1,3 +1,4 @@
+import 'package:battery_alarm/app/modules/home/battery_platform_channel.dart';
 import 'package:battery_indicator/battery_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -17,10 +18,13 @@ class _HomePageState extends State<HomePage> {
 
   late Future<bool> futureInitializeNotificationsChannel;
 
+  late BatteryPlatformChannelRepository batteryPlatformChannelRepository;
+
   @override
   void initState() {
     super.initState();
     futureInitializeNotificationsChannel = initializeNotificationsChannel();
+    batteryPlatformChannelRepository = store.channel;
     startListeningToTheBatteryValue();
   }
 
@@ -57,45 +61,73 @@ class _HomePageState extends State<HomePage> {
   }
 
   void startListeningToTheBatteryValue() {
-    final batteryStream = store.channel.batteryChannel.receiveBroadcastStream();
+    final batteryStream = batteryPlatformChannelRepository.batteryEventChannel.receiveBroadcastStream();
     batteryStream.listen(onNewBatteryValueCallback);
   }
 
   var previousBatteryValue = 0.0;
   var currentBatteryValue = 0.0;
-  var buildCounter = 0;
 
   void onNewBatteryValueCallback(dynamic possibleValue) {
-    final newBatteryValue = possibleValue as double?;
-    if (newBatteryValue != null && newBatteryValue != currentBatteryValue) {
-      if (newBatteryValue == 80 && previousBatteryValue < 80) {
-        showNotification();
+    try {
+      final newBatteryValue = possibleValue as double?;
+      if (newBatteryValue != null && newBatteryValue != currentBatteryValue) {
+        if (newBatteryValue == 80.0 && previousBatteryValue < 80.0) {
+          showNotification();
+        }
+        setState(() {
+          previousBatteryValue = currentBatteryValue;
+          currentBatteryValue = newBatteryValue;
+        });
       }
-      setState(() {
-        previousBatteryValue = currentBatteryValue;
-        currentBatteryValue = newBatteryValue;
-        buildCounter++;
-      });
+    } catch (e) {
+      onNewBatteryValueError();
     }
   }
 
-  Future<void> showNotification() {
-    return flutterLocalNotificationsPlugin.show(
-      0,
-      'Seu celular agradece:',
-      'Preserve a bateria dele tirando-o da tomada',
-      platformChannelSpecifics,
+  void onNewBatteryValueError() {
+    const batteryDataFromChannelError = 'Não foi possível receber o nível atual de bateria';
+    showSnackBar(message: batteryDataFromChannelError);
+  }
+
+  void showSnackBar({required String message}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+      ),
     );
   }
+
+  Future<void> showNotification() async {
+    try {
+      await flutterLocalNotificationsPlugin.show(
+        0,
+        'Seu celular agradece:',
+        'Preserve a bateria dele tirando-o da tomada',
+        platformChannelSpecifics,
+      );
+    } catch (e) {
+      onErrorWhenRequestingNotifications();
+    }
+  }
+
+  void onErrorWhenRequestingNotifications() {
+    const notificationRequestError = 'Não foi possível lançar uma notificação';
+    showSnackBar(message: notificationRequestError);
+  }
+
+  var notificationRequestError = '';
+
+  var isRequestingNotification = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Battery Listener'),
+        title: const Text('Sistema de notificação de bateria'),
       ),
       body: Center(
-        child: FutureBuilder(
+        child: FutureBuilder<bool>(
           initialData: false,
           future: futureInitializeNotificationsChannel,
           builder: (context, snapshot) {
@@ -109,27 +141,47 @@ class _HomePageState extends State<HomePage> {
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                //Text('Builds: $buildCounter'),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      'Battery: ',
+                      'Bateria: ',
                       style: TextStyle(fontSize: 40),
                     ),
                     BatteryIndicator(
                       batteryFromPhone: false,
                       batteryLevel: currentBatteryValue.toInt(),
-                      size: 36,
-                      percentNumSize: 27,
+                      size: 36.0,
+                      percentNumSize: 27.0,
                     ),
                   ],
                 ),
-                TextButton(
-                  onPressed: () {
-                    showNotification();
+                StatefulBuilder(
+                  builder: (context, setState) {
+                    if (isRequestingNotification) {
+                      return const CircularProgressIndicator();
+                    }
+                    final widgets = <Widget>[];
+                    final buttonWidget = TextButton(
+                      onPressed: () async {
+                        setState(() {
+                          isRequestingNotification = true;
+                        });
+                        await showNotification();
+                        if (!mounted) return;
+                        setState(() {
+                          isRequestingNotification = false;
+                        });
+                      },
+                      child: const Text('Mostrar notificação'),
+                    );
+                    if (notificationRequestError.isNotEmpty) {
+                      final errorWidget = Text(notificationRequestError, style: TextStyle(color: Theme.of(context).errorColor));
+                      widgets.add(errorWidget);
+                    }
+                    widgets.add(buttonWidget);
+                    return Column(mainAxisSize: MainAxisSize.min, children: widgets);
                   },
-                  child: const Text('Show notification'),
                 )
               ],
             );
