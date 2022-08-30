@@ -8,9 +8,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.BatteryManager
-import android.os.Build
-import android.os.IBinder
+import android.os.*
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -32,7 +30,7 @@ class BatteryNotificationService : Service() {
         // Create the persistent notification
         val builder = NotificationCompat.Builder(this, "1234")
             .setContentTitle("Battery Alarm")
-            .setContentText("Location tracking is working")
+            .setContentText("Battery tracking is working")
             .setOngoing(true)
             .setContentIntent(broadcastIntent)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -49,30 +47,21 @@ class BatteryNotificationService : Service() {
         startForeground(1, builder.build())
     }
 
-
-//    private fun createNotificationChannel() {
-//        // Create the NotificationChannel, but only on API 26+ because
-//        // the NotificationChannel class is new and not in the support library
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//            val name = "Battery Value Channel"
-//            val descriptionText = "That's my battery value notification channel"
-//            val importance = NotificationManager.IMPORTANCE_HIGH
-//            val channel = NotificationChannel("123123123", name, importance).apply {
-//                description = descriptionText
-//            }
-//            // Register the channel with the system
-//            val notificationManager: NotificationManager =
-//                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-//            notificationManager.createNotificationChannel(channel)
-//        }
-//    }
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         buildNotification()
         //createNotificationChannel()
 
-        //val onNewBatteryValueCallback = fun(value: Float) { showNotification(value)}
-        val onNewBatteryValueCallback = fun(value: Float) { showToast(value)}
+        val callback : ResultReceiver = if (Build.VERSION.SDK_INT >= 33) {
+            intent!!.getParcelableExtra("notification_callback", ResultReceiver::class.java)!!
+        } else {
+            intent!!.getParcelableExtra("notification_callback")!!
+        }
+
+        val onNewBatteryValueCallback = fun(value: Float) {
+            val bundle = Bundle()
+            bundle.putFloat("battery", value)
+            callback.send(0, bundle)
+            showToast(value)}
         batteryBroadcastReceiver = BatteryBroadcastReceiver(onNewBatteryValueCallback)
         registerReceiver(batteryBroadcastReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         println("Notifying")
@@ -95,10 +84,6 @@ class BatteryNotificationService : Service() {
             notify(Random.nextInt(), builder.build())
         }
         println("Notifying")
-    }
-
-    override fun onDestroy() {
-
     }
 }
 
