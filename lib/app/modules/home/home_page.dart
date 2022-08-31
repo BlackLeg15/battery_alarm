@@ -25,7 +25,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     futureInitializeNotificationsChannel = initializeNotificationsChannel();
     batteryPlatformChannelRepository = store.channel;
-    startListeningToTheBatteryValue();
+    registerCallbackForBatteryValues();
   }
 
   late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
@@ -60,7 +60,7 @@ class _HomePageState extends State<HomePage> {
     notificationsChannelInitializationError = 'Não foi possível inicializar o canal de notificações';
   }
 
-  void startListeningToTheBatteryValue() {
+  void registerCallbackForBatteryValues() {
     final batteryStream = batteryPlatformChannelRepository.batteryEventChannel.receiveBroadcastStream();
     batteryStream.listen(onNewBatteryValueCallback);
   }
@@ -73,7 +73,7 @@ class _HomePageState extends State<HomePage> {
       final newBatteryValue = possibleValue as double?;
       if (newBatteryValue != null && newBatteryValue != currentBatteryValue) {
         if (newBatteryValue == 80.0 && previousBatteryValue < 80.0) {
-        showNotification();
+          showNotification();
         }
         setState(() {
           previousBatteryValue = currentBatteryValue;
@@ -120,6 +120,40 @@ class _HomePageState extends State<HomePage> {
 
   var isRequestingNotification = false;
 
+  bool isLoading = false;
+
+  bool isBatteryServiceInitialized = false;
+
+  Future<void> initBatteryNotificationsService() async {
+    setState(() {
+      isLoading = true;
+    });
+    try {
+      await batteryPlatformChannelRepository.initService();
+      isBatteryServiceInitialized = true;
+    } catch (e) {
+      showSnackBar(message: "Não foi possível iniciar o serviço de notificações de bateria");
+    }
+    setState(() {
+      isLoading = false;
+    });
+  }
+
+  Future<void> stopBatteryNotificationsService() async {
+    setState(() {
+      isLoading = true;
+    });
+    try {
+      await batteryPlatformChannelRepository.stopService();
+      isBatteryServiceInitialized = false;
+    } catch (e) {
+      showSnackBar(message: "Não foi possível parar o serviço de notificações de bateria");
+    }
+    setState(() {
+      isLoading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -136,6 +170,9 @@ class _HomePageState extends State<HomePage> {
               if (notificationsChannelInitializationError.isNotEmpty) {
                 return Text(notificationsChannelInitializationError);
               }
+              return const CircularProgressIndicator();
+            }
+            if (isLoading) {
               return const CircularProgressIndicator();
             }
             return Column(
@@ -182,7 +219,18 @@ class _HomePageState extends State<HomePage> {
                     widgets.add(buttonWidget);
                     return Column(mainAxisSize: MainAxisSize.min, children: widgets);
                   },
-                )
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text("Status do serviço de bateria:"),
+                    Switch(
+                      value: isBatteryServiceInitialized,
+                      onChanged: (value) => value ? initBatteryNotificationsService() : stopBatteryNotificationsService(),
+                    ),
+                  ],
+                ),
               ],
             );
           },
