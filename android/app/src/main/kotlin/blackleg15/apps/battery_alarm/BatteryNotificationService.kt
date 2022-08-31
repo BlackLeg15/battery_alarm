@@ -57,10 +57,10 @@ class BatteryNotificationService : Service() {
         }
 
         val onNewBatteryValueCallback = fun(value: Float) {
-            val bundle = Bundle()
-            bundle.putFloat("battery", value)
-            callback.send(0, bundle)
-            showToast(value)}
+                val bundle = Bundle()
+                bundle.putFloat("battery", value)
+                callback.send(0, bundle)
+            }
         batteryBroadcastReceiver = BatteryBroadcastReceiver(onNewBatteryValueCallback)
         registerReceiver(batteryBroadcastReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         println("Notifying")
