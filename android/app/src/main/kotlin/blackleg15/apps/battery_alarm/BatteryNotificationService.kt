@@ -9,10 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.*
-import android.widget.Toast
 import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import kotlin.random.Random
 
 class BatteryNotificationService : Service() {
     private var batteryBroadcastReceiver: BatteryBroadcastReceiver? = null
@@ -23,11 +20,13 @@ class BatteryNotificationService : Service() {
 
     private fun buildNotificationBadge() {
         val stop = "stop"
-        val broadcastIntent = PendingIntent.getBroadcast(
-            this, 0, Intent(stop), PendingIntent.FLAG_IMMUTABLE
-        )
+        val flag =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE else PendingIntent.FLAG_UPDATE_CURRENT
+        val broadcastIntent =
+            PendingIntent.getBroadcast(
+                this, 0, Intent(stop), flag
+            )
 
-        // Create the persistent notification
         val builder = NotificationCompat.Builder(this, "1234")
             .setContentTitle("Battery Alarm")
             .setContentText("Battery tracking is working")
