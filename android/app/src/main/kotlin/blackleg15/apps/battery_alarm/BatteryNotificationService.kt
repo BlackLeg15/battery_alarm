@@ -49,7 +49,7 @@ class BatteryNotificationService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         buildNotificationBadge()
 
-        val callback : ResultReceiver = if (Build.VERSION.SDK_INT >= 33) {
+        val resultReceiver : ResultReceiver = if (Build.VERSION.SDK_INT >= 33) {
             intent!!.getParcelableExtra("notification_callback", ResultReceiver::class.java)!!
         } else {
             intent!!.getParcelableExtra("notification_callback")!!
@@ -58,7 +58,7 @@ class BatteryNotificationService : Service() {
         val onNewBatteryValueCallback = fun(value: Float) {
                 val bundle = Bundle()
                 bundle.putFloat("battery", value)
-                callback.send(0, bundle)
+                resultReceiver.send(0, bundle)
             }
         batteryBroadcastReceiver = BatteryBroadcastReceiver(onNewBatteryValueCallback)
         registerReceiver(batteryBroadcastReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
