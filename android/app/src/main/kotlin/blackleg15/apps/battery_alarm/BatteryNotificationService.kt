@@ -21,7 +21,7 @@ class BatteryNotificationService : Service() {
         return null
     }
 
-    private fun buildNotification() {
+    private fun buildNotificationBadge() {
         val stop = "stop"
         val broadcastIntent = PendingIntent.getBroadcast(
             this, 0, Intent(stop), PendingIntent.FLAG_IMMUTABLE
@@ -48,8 +48,7 @@ class BatteryNotificationService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        buildNotification()
-        //createNotificationChannel()
+        buildNotificationBadge()
 
         val callback : ResultReceiver = if (Build.VERSION.SDK_INT >= 33) {
             intent!!.getParcelableExtra("notification_callback", ResultReceiver::class.java)!!
@@ -68,22 +67,9 @@ class BatteryNotificationService : Service() {
         return START_STICKY
     }
 
-    private fun showToast(value : Float){
-        Toast.makeText(this@BatteryNotificationService, "Battery Value: $value", Toast.LENGTH_LONG).show()
-    }
-
-    private fun showNotification(value : Float){
-        val builder = NotificationCompat.Builder(this, "123123123")
-            .setSmallIcon(R.drawable.app_icon)
-            .setContentTitle("Hello, World")
-            .setContentText(value.toString())
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-
-        with(NotificationManagerCompat.from(this)) {
-            // notificationId is a unique int for each notification that you must define
-            notify(Random.nextInt(), builder.build())
-        }
-        println("Notifying")
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(batteryBroadcastReceiver)
     }
 }
 
