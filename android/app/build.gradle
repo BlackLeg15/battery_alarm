@@ -50,7 +50,7 @@ android {
 
     defaultConfig {
         applicationId "blackleg15.apps.battery_alarm"
-        minSdkVersion 21
+        minSdkVersion flutter.minSdkVersion
         targetSdkVersion 33
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
