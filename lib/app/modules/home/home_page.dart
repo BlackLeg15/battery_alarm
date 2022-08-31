@@ -72,7 +72,7 @@ class _HomePageState extends State<HomePage> {
     try {
       final newBatteryValue = possibleValue as double?;
       if (newBatteryValue != null && newBatteryValue != currentBatteryValue) {
-        if (newBatteryValue == 80.0 && previousBatteryValue < 80.0) {
+        if (newBatteryValue >= 80.0 && previousBatteryValue < 80.0) {
           showNotification();
         }
         setState(() {
