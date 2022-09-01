@@ -1,7 +1,7 @@
-import 'package:battery_alarm/app/modules/home/battery_platform_channel.dart';
 import 'package:flutter_modular/flutter_modular.dart';
-import '../home/home_store.dart';
 
+import '../home/home_store.dart';
+import 'battery_platform_channel.dart';
 import 'home_page.dart';
 
 class HomeModule extends Module {

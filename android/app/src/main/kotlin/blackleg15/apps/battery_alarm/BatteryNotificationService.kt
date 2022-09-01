@@ -27,14 +27,14 @@ class BatteryNotificationService : Service() {
                 this, 0, Intent(stop), flag
             )
 
-        val builder = NotificationCompat.Builder(this, "1234")
+        val builder = NotificationCompat.Builder(this, "ee2fe36d4e0f04404109ad5e45bbe2ed")
             .setContentTitle("Battery Alarm")
             .setContentText("Battery tracking is working")
             .setOngoing(true)
             .setContentIntent(broadcastIntent)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                "1234", "Battery Alarm",
+                "ee2fe36d4e0f04404109ad5e45bbe2ed", "Battery Alarm",
                 NotificationManager.IMPORTANCE_DEFAULT
             )
             channel.setShowBadge(false)
@@ -49,18 +49,20 @@ class BatteryNotificationService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         buildNotificationBadge()
 
-        val resultReceiver : ResultReceiver = if (Build.VERSION.SDK_INT >= 33) {
+        val resultReceiver: ResultReceiver = if (Build.VERSION.SDK_INT >= 33) {
             intent!!.getParcelableExtra("notification_callback", ResultReceiver::class.java)!!
         } else {
             intent!!.getParcelableExtra("notification_callback")!!
         }
 
         val onNewBatteryValueCallback = fun(value: Float) {
-                val bundle = Bundle()
-                bundle.putFloat("battery", value)
-                resultReceiver.send(0, bundle)
-            }
-        batteryBroadcastReceiver = BatteryBroadcastReceiver(onNewBatteryValueCallback)
+            val bundle = Bundle()
+            bundle.putFloat("battery", value)
+            resultReceiver.send(0, bundle)
+        }
+        if (batteryBroadcastReceiver == null) {
+            batteryBroadcastReceiver = BatteryBroadcastReceiver(onNewBatteryValueCallback)
+        }
         registerReceiver(batteryBroadcastReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         println("Notifying")
         return START_STICKY
