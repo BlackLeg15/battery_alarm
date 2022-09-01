@@ -1,9 +1,9 @@
-import 'package:battery_alarm/app/modules/home/battery_platform_channel.dart';
 import 'package:battery_indicator/battery_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
+import 'battery_platform_channel.dart';
 import 'home_store.dart';
 
 class HomePage extends StatefulWidget {
@@ -71,8 +71,8 @@ class _HomePageState extends State<HomePage> {
   void onNewBatteryValueCallback(dynamic possibleValue) {
     try {
       final newBatteryValue = possibleValue as double?;
-      if (newBatteryValue != null && newBatteryValue != currentBatteryValue) {
-        if (newBatteryValue >= 80.0 && previousBatteryValue < 80.0) {
+      if (newBatteryValue != null) {
+        if (newBatteryValue >= 80.0 && newBatteryValue > currentBatteryValue) {
           showNotification();
         }
         setState(() {
