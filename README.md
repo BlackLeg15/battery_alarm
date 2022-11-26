@@ -1,16 +1,18 @@
 # battery_alarm
 
-A new Flutter project.
+## 1 Features
+### 1.1 Architecture
+- Feature-based
+### 1.2 State management
+- setState
+### 1.3 Dependency injection
+- package [<i>flutter_modular 5.0.3</i>](https://pub.dev/packages/flutter_modular) 
+### 1.4 Tests
+- No
+### 1.5 Other packages
+- package [<i>battery_indicator 0.1.1</i>](https://pub.dev/packages/battery_indicator)
+- package [<i>flutter_local_notifications 9.9.0</i>](https://pub.dev/packages/flutter_local_notifications)
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 2 Project specs
+- Dart 2.18.4
+- Flutter 3.3.9
